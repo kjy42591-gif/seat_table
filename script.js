@@ -33,7 +33,9 @@ const quizData = [
 ];
 
 // 2. 변수 및 HTML 요소 연결
-let currentQuestionIndex = 0;
+let currentQuestionList = []; // 현재 출제될 문제 번호 배열
+let currentListIndex = 0;     // 배열 내 진행 순서
+let wrongAnswers = [];        // 틀린 문제 번호 저장소
 let score = 0;
 
 const questionText = document.getElementById('question-text');
@@ -48,6 +50,7 @@ const resultScreen = document.getElementById('result-screen');
 const finalScore = document.getElementById('score');
 const totalQuestionsSpan = document.getElementById('total-questions');
 const restartBtn = document.getElementById('restart-btn');
+const retryWrongBtn = document.getElementById('retry-wrong-btn');
 const resultMessage = document.getElementById('result-message');
 
 const canvas = document.getElementById('scratchpad');
@@ -58,7 +61,7 @@ let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
 
-// 3. 연습장 로직
+// 3. 연습장 로직 (그대로 유지)
 function resizeCanvas() {
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
@@ -102,7 +105,6 @@ function stopDrawing() {
 
 function getEventPos(e) {
     let clientX, clientY;
-    
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
@@ -110,7 +112,6 @@ function getEventPos(e) {
         clientX = e.clientX;
         clientY = e.clientY;
     }
-
     const rect = canvas.getBoundingClientRect();
     return {
         x: clientX - rect.left,
@@ -121,7 +122,6 @@ function getEventPos(e) {
 canvas.addEventListener('touchstart', startDrawing, {passive: false});
 canvas.addEventListener('touchmove', draw, {passive: false});
 window.addEventListener('touchend', stopDrawing);
-
 canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mousemove', draw);
 window.addEventListener('mouseup', stopDrawing);
@@ -131,20 +131,34 @@ clearBtn.addEventListener('click', () => {
 });
 
 
-// 4. 퀴즈 실행 로직
+// 4. 오답노트 기능이 추가된 퀴즈 로직
+
+// 완전 처음부터 퀴즈 시작
 function initQuiz() {
-    currentQuestionIndex = 0;
+    // 모든 문제의 번호를 배열로 만듦 [0, 1, 2]
+    currentQuestionList = quizData.map((_, index) => index); 
+    startQuizFlow();
+}
+
+// 퀴즈 진행 흐름 시작 (처음 시작 & 오답 다시 풀기 공통)
+function startQuizFlow() {
+    currentListIndex = 0;
     score = 0;
-    totalQNum.innerText = quizData.length;
-    totalQuestionsSpan.innerText = quizData.length;
+    wrongAnswers = []; // 이번 라운드의 틀린 문제 초기화
+    
+    totalQNum.innerText = currentQuestionList.length;
+    totalQuestionsSpan.innerText = currentQuestionList.length;
     quizScreen.classList.remove('hidden');
     resultScreen.classList.add('hidden');
+    
     loadQuestion();
 }
 
 function loadQuestion() {
-    const currentQuiz = quizData[currentQuestionIndex];
-    currentQNum.innerText = currentQuestionIndex + 1;
+    const actualQuizIndex = currentQuestionList[currentListIndex];
+    const currentQuiz = quizData[actualQuizIndex];
+    
+    currentQNum.innerText = currentListIndex + 1;
     questionText.innerText = currentQuiz.question;
     
     optionsContainer.innerHTML = '';
@@ -157,7 +171,7 @@ function loadQuestion() {
         const button = document.createElement('button');
         button.innerText = `${circleNumbers[index]} ${option}`;
         button.classList.add('option-btn');
-        button.addEventListener('click', () => selectAnswer(index, button));
+        button.addEventListener('click', () => selectAnswer(index, button, actualQuizIndex));
         optionsContainer.appendChild(button);
     });
 
@@ -165,8 +179,8 @@ function loadQuestion() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function selectAnswer(selectedIndex, selectedButton) {
-    const currentQuiz = quizData[currentQuestionIndex];
+function selectAnswer(selectedIndex, selectedButton, actualQuizIndex) {
+    const currentQuiz = quizData[actualQuizIndex];
     const buttons = document.querySelectorAll('.option-btn');
     
     buttons.forEach(btn => btn.disabled = true); 
@@ -181,6 +195,9 @@ function selectAnswer(selectedIndex, selectedButton) {
         buttons[currentQuiz.answer].classList.add('correct'); 
         feedbackText.innerText = "아쉽네요, 다시 한번 생각해봐요! 💡";
         feedbackText.className = "feedback wrong-text";
+        
+        // ★ 틀린 문제 번호 저장 ★
+        wrongAnswers.push(actualQuizIndex);
     }
 
     feedbackText.classList.remove('hidden');
@@ -188,8 +205,8 @@ function selectAnswer(selectedIndex, selectedButton) {
 }
 
 nextBtn.addEventListener('click', () => {
-    currentQuestionIndex++;
-    if (currentQuestionIndex < quizData.length) {
+    currentListIndex++;
+    if (currentListIndex < currentQuestionList.length) {
         loadQuestion();
     } else {
         showResults();
@@ -201,14 +218,25 @@ function showResults() {
     resultScreen.classList.remove('hidden');
     finalScore.innerText = score;
 
-    if (score === quizData.length) {
-        resultMessage.innerText = "완벽해요! 오늘 수업 준비 완료입니다! 🚀";
-    } else if (score >= quizData.length / 2) {
-        resultMessage.innerText = "잘했어요! 조금만 더 복습하면 완벽해질 거예요! 😊";
+    // 틀린 문제가 하나라도 있다면 오답 버튼 표시
+    if (wrongAnswers.length > 0) {
+        retryWrongBtn.classList.remove('hidden');
+        resultMessage.innerText = "틀린 문제는 꼭 짚고 넘어가요! 다시 도전해 볼까요? 💪";
     } else {
-        resultMessage.innerText = "틀린 문제는 수업 시간에 선생님과 함께 알아봅시다! 💪";
+        retryWrongBtn.classList.add('hidden');
+        resultMessage.innerText = "전부 다 맞혔어요! 오늘 수업 준비 완벽합니다! 🚀";
     }
 }
+
+// 오답 다시 풀기 버튼 이벤트
+retryWrongBtn.addEventListener('click', () => {
+    // 풀어야 할 문제 목록을 틀린 문제 번호들로 교체
+    currentQuestionList = [...wrongAnswers];
+    startQuizFlow();
+});
+
+// 처음부터 다시 풀기 버튼 이벤트
+restartBtn.addEventListener('click', initQuiz);
 
 // 5. 최초 실행
 resizeCanvas(); 
