@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중학교 2학년 수학 몸풀기 퀴즈</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>📝 오늘의 수학 몸풀기</h1>
+        
+        <div id="quiz-screen">
+            <div class="progress">문제 <span id="current-q-num">1</span> / <span id="total-q-num">3</span></div>
+            <h2 id="question-text">문제 내용이 여기에 표시됩니다.</h2>
+            <div id="options-container" class="options">
+                </div>
+            <div id="feedback" class="feedback hidden"></div>
+            <button id="next-btn" class="hidden">다음 문제로 넘어가기</button>
+        </div>
+
+        <div id="result-screen" class="hidden">
+            <h2>수고하셨습니다! 🎉</h2>
+            <p class="score-text">총 <span id="total-questions">0</span>문제 중 <strong id="score">0</strong>문제를 맞혔습니다.</p>
+            <p id="result-message"></p>
+            <button id="restart-btn">다시 도전하기</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
