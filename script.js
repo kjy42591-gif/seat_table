@@ -1,122 +1,173 @@
-// =================================================================
-// 1. 퀴즈 문제 데이터 (중학교 2학년 일차함수 단원)
-// =================================================================
-const quizData = [
-    {
-        // 1. 일차함수를 찾는 문제
-        question: "다음 중 y가 x에 대한 일차함수인 것은?",
-        options: [
-            "y = 5", 
-            "y = x² + 1", 
-            "y = 3/x", 
-            "y = -2x + 4"
-        ],
-        answer: 3 // 정답: y = -2x + 4 (인덱스 3)
-    },
-    {
-        // 2. 절편과 기울기와 관련된 문제
-        question: "일차함수 y = 3x - 6 의 그래프에 대한 설명으로 옳은 것은?",
-        options: [
-            "x절편은 -6이다.", 
-            "y절편은 3이다.", 
-            "기울기는 3이고, x절편은 2이다.", 
-            "기울기는 -6이다."
-        ],
-        answer: 2 // 정답: 기울기는 3이고, x절편은 2이다. (인덱스 2)
-    },
-    {
-        // 3. 일차함수의 활용 문제
-        question: "길이가 15cm인 양초에 불을 붙이면 1시간마다 3cm씩 짧아집니다. 불을 붙인 지 2시간 후 남은 양초의 길이는 몇 cm일까요?",
-        options: [
-            "6cm", 
-            "9cm", 
-            "12cm", 
-            "15cm"
-        ],
-        answer: 1 // 정답: 9cm (인덱스 1)
-    }
-];
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
 
-// =================================================================
-// 2. 변수 및 HTML 요소 선언
-// =================================================================
-let currentQuestionIndex = 0;
-let score = 0;
-
-const questionText = document.getElementById('question-text');
-const optionsContainer = document.getElementById('options-container');
-const nextBtn = document.getElementById('next-btn');
-const feedbackText = document.getElementById('feedback');
-const currentQNum = document.getElementById('current-q-num');
-const totalQNum = document.getElementById('total-q-num');
-
-const quizScreen = document.getElementById('quiz-screen');
-const resultScreen = document.getElementById('result-screen');
-const finalScore = document.getElementById('score');
-const totalQuestionsSpan = document.getElementById('total-questions');
-const restartBtn = document.getElementById('restart-btn');
-const resultMessage = document.getElementById('result-message');
-
-// 연습장(Canvas) 관련 변수
-const canvas = document.getElementById('scratchpad');
-const ctx = canvas.getContext('2d');
-const clearBtn = document.getElementById('clear-btn');
-
-let isDrawing = false;
-let lastX = 0;
-let lastY = 0;
-
-// =================================================================
-// 3. 디지털 연습장(필기 기능) 로직
-// =================================================================
-
-// 캔버스 해상도와 화면 표시 크기를 맞추는 함수
-function resizeCanvas() {
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-        canvas.width = displayWidth;
-        canvas.height = displayHeight;
-    }
-    
-    // 선 스타일 설정 (크기 변경 시 매번 다시 설정 필요)
-    ctx.strokeStyle = '#333'; // 선 색상
-    ctx.lineJoin = 'round';   // 부드러운 연결
-    ctx.lineCap = 'round';    // 둥근 선 끝
-    ctx.lineWidth = 2;        // 선 두께
+* {
+    box-sizing: border-box;
+    font-family: 'Noto Sans KR', sans-serif;
 }
 
-// 창 크기가 바뀌거나 화면 회전 시 대응
-window.addEventListener('resize', resizeCanvas);
-
-// 그리기 시작
-function startDrawing(e) {
-    isDrawing = true;
-    const pos = getEventPos(e);
-    [lastX, lastY] = [pos.x, pos.y];
+body {
+    background-color: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    /* 태블릿 스크롤 방지 필수 설정 */
+    overflow: hidden; 
+    position: fixed;
+    width: 100%;
+    height: 100%;
 }
 
-// 그리기 진행
-function draw(e) {
-    if (!isDrawing) return;
-    
-    // 태블릿 터치 시 화면이 들썩거리거나 스크롤되는 현상 방지
-    if(e.cancelable) e.preventDefault(); 
-
-    const pos = getEventPos(e);
-
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-
-    [lastX, lastY] = [pos.x, pos.y];
+.quiz-container {
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    padding: 25px;
+    width: 95%;
+    max-width: 650px;
+    text-align: center;
+    max-height: 90vh;
+    overflow-y: auto; 
 }
 
-// 그리기 종료
-function stopDrawing() {
-    isDrawing = false;
+h1 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
 }
 
-// 마우스
+.progress {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+#question-text {
+    font-size: 1.2rem;
+    color: #34495e;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    word-break: keep-all;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.option-btn {
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.option-btn:hover {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+}
+
+.option-btn:disabled {
+    cursor: not-allowed;
+}
+
+.option-btn.correct {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.option-btn.wrong {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+/* 연습장 디자인 */
+.scratchpad-container {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+    overflow: hidden;
+}
+
+.scratchpad-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    background-color: #eee;
+    border-bottom: 1px solid #ddd;
+    color: #555;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+#clear-btn {
+    background-color: #95a5a6;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+#clear-btn:hover {
+    background-color: #7f8c8d;
+}
+
+#scratchpad {
+    display: block;
+    width: 100%;
+    height: 200px;
+    cursor: crosshair;
+    touch-action: none; 
+}
+
+.feedback {
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.feedback.correct-text { color: #28a745; }
+.feedback.wrong-text { color: #dc3545; }
+
+#next-btn, #restart-btn {
+    margin-top: 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+#next-btn:hover, #restart-btn:hover {
+    background-color: #2980b9;
+}
+
+.score-text {
+    font-size: 1.2rem;
+    margin: 20px 0;
+}
+
+#score {
+    color: #e74c3c;
+    font-size: 1.5rem;
+}
+
+.hidden {
+    display: none !important;
+}
