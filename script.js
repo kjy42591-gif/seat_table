@@ -1,173 +1,215 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+// 1. 퀴즈 문제 데이터
+const quizData = [
+    {
+        question: "다음 중 y가 x에 대한 일차함수인 것은?",
+        options: [
+            "y = 5", 
+            "y = x² + 1", 
+            "y = 3/x", 
+            "y = -2x + 4"
+        ],
+        answer: 3 
+    },
+    {
+        question: "일차함수 y = 3x - 6 의 그래프에 대한 설명으로 옳은 것은?",
+        options: [
+            "x절편은 -6이다.", 
+            "y절편은 3이다.", 
+            "기울기는 3이고, x절편은 2이다.", 
+            "기울기는 -6이다."
+        ],
+        answer: 2 
+    },
+    {
+        question: "길이가 15cm인 양초에 불을 붙이면 1시간마다 3cm씩 짧아집니다. 불을 붙인 지 2시간 후 남은 양초의 길이는 몇 cm일까요?",
+        options: [
+            "6cm", 
+            "9cm", 
+            "12cm", 
+            "15cm"
+        ],
+        answer: 1 
+    }
+];
 
-* {
-    box-sizing: border-box;
-    font-family: 'Noto Sans KR', sans-serif;
+// 2. 변수 및 HTML 요소 연결
+let currentQuestionIndex = 0;
+let score = 0;
+
+const questionText = document.getElementById('question-text');
+const optionsContainer = document.getElementById('options-container');
+const nextBtn = document.getElementById('next-btn');
+const feedbackText = document.getElementById('feedback');
+const currentQNum = document.getElementById('current-q-num');
+const totalQNum = document.getElementById('total-q-num');
+
+const quizScreen = document.getElementById('quiz-screen');
+const resultScreen = document.getElementById('result-screen');
+const finalScore = document.getElementById('score');
+const totalQuestionsSpan = document.getElementById('total-questions');
+const restartBtn = document.getElementById('restart-btn');
+const resultMessage = document.getElementById('result-message');
+
+const canvas = document.getElementById('scratchpad');
+const ctx = canvas.getContext('2d');
+const clearBtn = document.getElementById('clear-btn');
+
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+
+// 3. 연습장 로직
+function resizeCanvas() {
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+    }
+    
+    ctx.strokeStyle = '#333'; 
+    ctx.lineJoin = 'round';   
+    ctx.lineCap = 'round';    
+    ctx.lineWidth = 2;        
 }
 
-body {
-    background-color: #f0f4f8;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    /* 태블릿 스크롤 방지 필수 설정 */
-    overflow: hidden; 
-    position: fixed;
-    width: 100%;
-    height: 100%;
+window.addEventListener('resize', resizeCanvas);
+
+function startDrawing(e) {
+    isDrawing = true;
+    const pos = getEventPos(e);
+    [lastX, lastY] = [pos.x, pos.y];
 }
 
-.quiz-container {
-    background-color: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    padding: 25px;
-    width: 95%;
-    max-width: 650px;
-    text-align: center;
-    max-height: 90vh;
-    overflow-y: auto; 
+function draw(e) {
+    if (!isDrawing) return;
+    if(e.cancelable) e.preventDefault(); 
+
+    const pos = getEventPos(e);
+
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+
+    [lastX, lastY] = [pos.x, pos.y];
 }
 
-h1 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 1.5rem;
+function stopDrawing() {
+    isDrawing = false;
 }
 
-.progress {
-    color: #7f8c8d;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
+function getEventPos(e) {
+    let clientX, clientY;
+    
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+    };
 }
 
-#question-text {
-    font-size: 1.2rem;
-    color: #34495e;
-    margin-bottom: 20px;
-    line-height: 1.5;
-    word-break: keep-all;
+canvas.addEventListener('touchstart', startDrawing, {passive: false});
+canvas.addEventListener('touchmove', draw, {passive: false});
+window.addEventListener('touchend', stopDrawing);
+
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', draw);
+window.addEventListener('mouseup', stopDrawing);
+
+clearBtn.addEventListener('click', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+});
+
+
+// 4. 퀴즈 실행 로직
+function initQuiz() {
+    currentQuestionIndex = 0;
+    score = 0;
+    totalQNum.innerText = quizData.length;
+    totalQuestionsSpan.innerText = quizData.length;
+    quizScreen.classList.remove('hidden');
+    resultScreen.classList.add('hidden');
+    loadQuestion();
 }
 
-.options {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+function loadQuestion() {
+    const currentQuiz = quizData[currentQuestionIndex];
+    currentQNum.innerText = currentQuestionIndex + 1;
+    questionText.innerText = currentQuiz.question;
+    
+    optionsContainer.innerHTML = '';
+    feedbackText.classList.add('hidden');
+    nextBtn.classList.add('hidden');
+
+    const circleNumbers = ['①', '②', '③', '④'];
+
+    currentQuiz.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.innerText = `${circleNumbers[index]} ${option}`;
+        button.classList.add('option-btn');
+        button.addEventListener('click', () => selectAnswer(index, button));
+        optionsContainer.appendChild(button);
+    });
+
+    resizeCanvas(); 
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-.option-btn {
-    background-color: #f8f9fa;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
+function selectAnswer(selectedIndex, selectedButton) {
+    const currentQuiz = quizData[currentQuestionIndex];
+    const buttons = document.querySelectorAll('.option-btn');
+    
+    buttons.forEach(btn => btn.disabled = true); 
+
+    if (selectedIndex === currentQuiz.answer) {
+        selectedButton.classList.add('correct');
+        feedbackText.innerText = "정답입니다! 👏";
+        feedbackText.className = "feedback correct-text";
+        score++;
+    } else {
+        selectedButton.classList.add('wrong');
+        buttons[currentQuiz.answer].classList.add('correct'); 
+        feedbackText.innerText = "아쉽네요, 다시 한번 생각해봐요! 💡";
+        feedbackText.className = "feedback wrong-text";
+    }
+
+    feedbackText.classList.remove('hidden');
+    nextBtn.classList.remove('hidden');
 }
 
-.option-btn:hover {
-    background-color: #e9ecef;
-    border-color: #ced4da;
+nextBtn.addEventListener('click', () => {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < quizData.length) {
+        loadQuestion();
+    } else {
+        showResults();
+    }
+});
+
+function showResults() {
+    quizScreen.classList.add('hidden');
+    resultScreen.classList.remove('hidden');
+    finalScore.innerText = score;
+
+    if (score === quizData.length) {
+        resultMessage.innerText = "완벽해요! 오늘 수업 준비 완료입니다! 🚀";
+    } else if (score >= quizData.length / 2) {
+        resultMessage.innerText = "잘했어요! 조금만 더 복습하면 완벽해질 거예요! 😊";
+    } else {
+        resultMessage.innerText = "틀린 문제는 수업 시간에 선생님과 함께 알아봅시다! 💪";
+    }
 }
 
-.option-btn:disabled {
-    cursor: not-allowed;
-}
-
-.option-btn.correct {
-    background-color: #d4edda;
-    border-color: #28a745;
-    color: #155724;
-}
-
-.option-btn.wrong {
-    background-color: #f8d7da;
-    border-color: #dc3545;
-    color: #721c24;
-}
-
-/* 연습장 디자인 */
-.scratchpad-container {
-    margin-top: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #fafafa;
-    overflow: hidden;
-}
-
-.scratchpad-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 15px;
-    background-color: #eee;
-    border-bottom: 1px solid #ddd;
-    color: #555;
-    font-size: 0.9rem;
-    font-weight: bold;
-}
-
-#clear-btn {
-    background-color: #95a5a6;
-    color: white;
-    border: none;
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-
-#clear-btn:hover {
-    background-color: #7f8c8d;
-}
-
-#scratchpad {
-    display: block;
-    width: 100%;
-    height: 200px;
-    cursor: crosshair;
-    touch-action: none; 
-}
-
-.feedback {
-    margin-top: 20px;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-.feedback.correct-text { color: #28a745; }
-.feedback.wrong-text { color: #dc3545; }
-
-#next-btn, #restart-btn {
-    margin-top: 20px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    font-size: 1.1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    width: 100%;
-}
-
-#next-btn:hover, #restart-btn:hover {
-    background-color: #2980b9;
-}
-
-.score-text {
-    font-size: 1.2rem;
-    margin: 20px 0;
-}
-
-#score {
-    color: #e74c3c;
-    font-size: 1.5rem;
-}
-
-.hidden {
-    display: none !important;
-}
+// 5. 최초 실행
+resizeCanvas(); 
+initQuiz();
