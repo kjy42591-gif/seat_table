@@ -2,8 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>중학교 2학년 수학 몸풀기 퀴즈</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <title>중학교 2학년 수학 몸풀기 퀴즈</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,8 +12,17 @@
         <div id="quiz-screen">
             <div class="progress">문제 <span id="current-q-num">1</span> / <span id="total-q-num">3</span></div>
             <h2 id="question-text">문제 내용이 여기에 표시됩니다.</h2>
+            
             <div id="options-container" class="options">
                 </div>
+
+            <div class="scratchpad-container">
+                <div class="scratchpad-header">
+                    <span>✍️ 연습장 (여기에 계산하세요)</span>
+                    <button id="clear-btn" type="button">지우기</button>
+                </div>
+                <canvas id="scratchpad"></canvas>
+            </div>
             <div id="feedback" class="feedback hidden"></div>
             <button id="next-btn" class="hidden">다음 문제로 넘어가기</button>
         </div>
