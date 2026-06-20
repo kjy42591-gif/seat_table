@@ -12,7 +12,6 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    /* 태블릿 스크롤 방지 필수 설정 */
     overflow: hidden; 
     position: fixed;
     width: 100%;
@@ -141,9 +140,9 @@ h1 {
 .feedback.correct-text { color: #28a745; }
 .feedback.wrong-text { color: #dc3545; }
 
-#next-btn, #restart-btn {
-    margin-top: 20px;
-    background-color: #3498db;
+/* 버튼 스타일 공통 */
+#next-btn, #restart-btn, #retry-wrong-btn {
+    margin-top: 15px;
     color: white;
     border: none;
     padding: 12px 25px;
@@ -154,8 +153,21 @@ h1 {
     width: 100%;
 }
 
+#next-btn, #restart-btn {
+    background-color: #3498db;
+}
+
 #next-btn:hover, #restart-btn:hover {
     background-color: #2980b9;
+}
+
+/* 오답 다시 풀기 전용 스타일 (주황색 포인트) */
+#retry-wrong-btn {
+    background-color: #f39c12;
+}
+
+#retry-wrong-btn:hover {
+    background-color: #e67e22;
 }
 
 .score-text {
